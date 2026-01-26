@@ -1,0 +1,300 @@
+You are a senior full-stack engineer and AI systems architect building a realistic, hackathon-ready FinTech web application called:
+
+SubSense – Agentic AI for Subscription Protection
+🎯 Project Objective
+
+Build a Paytm / GPay–style payment dashboard that simulates wallet transactions and auto-pay subscriptions, augmented with an Agentic AI system that autonomously protects users from silent financial loss.
+
+The system must detect:
+
+Silent subscription price increases
+
+Unused or forgotten subscriptions
+
+Recurring long-term financial leakage
+
+The AI must operate using a true agentic loop:
+
+Observe → Reason → Decide → Act,
+while ensuring user approval before any action.
+
+🧱 Technology Stack (MANDATORY – DO NOT CHANGE)
+Frontend
+
+React.js
+
+Tailwind CSS
+
+Chart.js or Recharts
+
+Backend
+
+Node.js with Express (primary application backend)
+
+Python with FastAPI (Agentic AI microservice)
+
+Database
+
+SQLite (preferred)
+
+JSON allowed for mock data where simpler
+
+AI & Reasoning
+
+Deterministic, rule-based logic for detection
+
+OpenAI GPT only for:
+
+Explanation
+
+Risk reasoning
+
+Human-readable alerts
+
+No hallucinated actions or decisions
+
+🧩 System Architecture (REALISTIC & MODULAR)
+1️⃣ Frontend (React Web App)
+
+Build a clean, modern UPI-style payment interface with:
+
+Wallet balance overview
+
+Auto-pay subscriptions list
+
+Transaction history
+
+AI alerts dashboard
+
+User actions:
+
+Cancel subscription
+
+Keep subscription
+
+View AI explanation
+
+2️⃣ Backend (Node.js – Payment Simulation Engine)
+
+Responsibilities:
+
+Simulate wallet balance and transactions
+
+Simulate monthly auto-pay deductions
+
+Store transactions and subscriptions
+
+Emit events when a new transaction occurs
+
+Communicate with the AI service for analysis
+
+This backend represents a realistic payment ledger, not a toy example.
+
+3️⃣ Agentic AI Service (Python – FastAPI)
+
+Implement autonomous AI agents, each with a clear responsibility:
+
+🟦 Monitoring Agent
+
+Observes new transactions
+
+Identifies recurring payments
+
+Builds subscription memory over time
+
+🟥 Anomaly Detection Agent
+
+Detects price increases >15%
+
+Identifies trial-to-paid transitions
+
+Flags plan drift without user action
+
+🟨 Usage Analysis Agent
+
+Analyzes service usage frequency
+
+Detects unused subscriptions over time
+
+🟪 Risk Prediction Agent
+
+Estimates monthly and yearly financial loss
+
+Assigns risk levels:
+
+High
+
+Medium
+
+Low
+
+🟩 Reasoning Agent (LLM-assisted)
+
+Explains:
+
+What changed
+
+Why it matters
+
+Financial impact
+
+Uses GPT only for explanation, not decisions
+
+🟧 Action Recommendation Agent
+
+Suggests:
+
+Cancel auto-pay
+
+Keep subscription
+
+Executes action only after user approval
+
+🔄 Functional Flow (STRICT – MUST FOLLOW EXACTLY)
+
+Auto-pay transaction occurs
+
+Transaction is stored in backend
+
+Agentic AI observes the transaction
+
+AI reasons using historical context
+
+Decision point:
+
+If no anomaly → continue silent monitoring
+
+If anomaly detected:
+
+Analyze risk & projected loss
+
+Generate explainable alert
+
+Request user action
+
+User decision:
+
+Cancel → disable auto-pay
+
+Keep → continue monitoring
+
+This loop must run continuously and autonomously.
+
+📊 Data Models (REALISTIC)
+Subscription
+
+merchant
+
+current_amount
+
+billing_cycle (monthly / yearly)
+
+status (active / paused / cancelled)
+
+last_used_date
+
+Transaction
+
+date
+
+merchant
+
+amount
+
+transaction_type (AUTO_PAY / MANUAL)
+
+status (success / blocked)
+
+Data should resemble real bank statements, not random numbers.
+
+🎨 UI & UX REQUIREMENTS
+
+Professional FinTech-style UI
+
+Risk badges (High / Medium / Low)
+
+Alerts must clearly explain:
+
+What changed
+
+Why it is risky
+
+Estimated yearly loss
+
+One-click, simulated actions
+
+No clutter, demo-first layout
+
+🧠 Agentic AI REQUIREMENTS (CRITICAL)
+
+Autonomous operation (no manual triggers)
+
+Clear separation of agents
+
+Persistent memory of past transactions
+
+Deterministic logic for detection
+
+GPT used only for explanation and reasoning
+
+No hallucinated financial actions
+
+🧪 Hackathon Constraints
+
+No real banking or UPI APIs
+
+No real payments
+
+Fully simulated but realistic
+
+Must run fully in browser
+
+Demo-ready in one click
+
+📁 Deliverables
+
+Fully working React frontend
+
+Node.js backend APIs
+
+Python FastAPI AI service
+
+Clean folder structure
+
+README including:
+
+Setup instructions
+
+Demo walkthrough
+
+Architecture explanation
+
+Agent roles
+
+🏆 Quality Expectations
+
+Clean, modular code
+
+Professional naming conventions
+
+Clear comments
+
+Minimal but impactful features
+
+Strong focus on agentic AI behavior
+
+🚨 Important Constraints
+
+Do NOT over-engineer
+
+Do NOT use real financial APIs
+
+Prioritize:
+
+Realism
+
+Explainability
+
+Demo clarity
+
+Agentic decision-making
