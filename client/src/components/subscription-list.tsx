@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getMerchantIcon } from "@/lib/merchant-icons";
+import { useLocation } from "wouter";
 import type { Subscription } from "@shared/schema";
 
 interface SubscriptionListProps {
@@ -18,6 +19,7 @@ interface SubscriptionListProps {
   onPause?: (id: string) => void;
   compact?: boolean;
   showTitle?: boolean;
+  onItemClick?: (id: string) => void;
 }
 
 export function SubscriptionList({
@@ -27,7 +29,9 @@ export function SubscriptionList({
   onPause,
   compact = false,
   showTitle = true,
+  onItemClick,
 }: SubscriptionListProps) {
+  const [, setLocation] = useLocation();
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -117,7 +121,8 @@ export function SubscriptionList({
               return (
                 <div
                   key={sub.id}
-                  className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover-elevate"
+                  className="flex items-center gap-4 p-3 rounded-lg bg-muted/30 hover-elevate cursor-pointer active-elevate-2 transition-transform"
+                  onClick={() => onItemClick ? onItemClick(sub.id) : setLocation("/subscriptions")}
                   data-testid={`subscription-item-${sub.id}`}
                 >
                   <div className={`flex items-center justify-center w-10 h-10 rounded-md ${merchantIcon.bgColor}`}>

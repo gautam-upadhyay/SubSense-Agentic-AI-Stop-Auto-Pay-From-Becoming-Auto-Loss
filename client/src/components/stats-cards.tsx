@@ -1,5 +1,6 @@
 import { CreditCard, TrendingUp, AlertTriangle, PiggyBank } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useLocation } from "wouter";
 import type { DashboardSummary } from "@shared/schema";
 
 interface StatsCardsProps {
@@ -8,6 +9,7 @@ interface StatsCardsProps {
 }
 
 export function StatsCards({ summary, isLoading }: StatsCardsProps) {
+  const [, setLocation] = useLocation();
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -24,6 +26,7 @@ export function StatsCards({ summary, isLoading }: StatsCardsProps) {
       icon: CreditCard,
       color: "text-primary",
       bgColor: "bg-primary/10",
+      href: "/subscriptions",
     },
     {
       label: "Monthly Spend",
@@ -32,6 +35,7 @@ export function StatsCards({ summary, isLoading }: StatsCardsProps) {
       icon: TrendingUp,
       color: "text-amber-600 dark:text-amber-400",
       bgColor: "bg-amber-100 dark:bg-amber-900/30",
+      href: "/transactions",
     },
     {
       label: "Pending Alerts",
@@ -40,6 +44,7 @@ export function StatsCards({ summary, isLoading }: StatsCardsProps) {
       icon: AlertTriangle,
       color: summary?.pendingAlerts ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400",
       bgColor: summary?.pendingAlerts ? "bg-red-100 dark:bg-red-900/30" : "bg-emerald-100 dark:bg-emerald-900/30",
+      href: "/alerts",
     },
     {
       label: "Potential Savings",
@@ -48,6 +53,7 @@ export function StatsCards({ summary, isLoading }: StatsCardsProps) {
       icon: PiggyBank,
       color: "text-emerald-600 dark:text-emerald-400",
       bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
+      href: "/alerts",
     },
   ];
 
@@ -72,7 +78,12 @@ export function StatsCards({ summary, isLoading }: StatsCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((stat, index) => (
-        <Card key={index} className="hover-elevate" data-testid={`card-stat-${stat.label.toLowerCase().replace(' ', '-')}`}>
+        <Card 
+          key={index} 
+          className="hover-elevate cursor-pointer active-elevate-2 transition-transform" 
+          onClick={() => setLocation(stat.href)}
+          data-testid={`card-stat-${stat.label.toLowerCase().replace(' ', '-')}`}
+        >
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>

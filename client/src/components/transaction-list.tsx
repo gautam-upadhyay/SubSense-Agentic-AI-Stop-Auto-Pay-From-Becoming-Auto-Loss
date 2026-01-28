@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, CheckCircle2, XCircle, Receipt, CreditCard } from "lucide-react";
 import { getMerchantIcon } from "@/lib/merchant-icons";
+import { useLocation } from "wouter";
 import type { Transaction } from "@shared/schema";
 
 interface TransactionListProps {
@@ -9,6 +10,7 @@ interface TransactionListProps {
   isLoading: boolean;
   compact?: boolean;
   showTitle?: boolean;
+  onItemClick?: (id: string) => void;
 }
 
 export function TransactionList({
@@ -16,7 +18,9 @@ export function TransactionList({
   isLoading,
   compact = false,
   showTitle = true,
+  onItemClick,
 }: TransactionListProps) {
+  const [, setLocation] = useLocation();
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -117,7 +121,8 @@ export function TransactionList({
               return (
                 <div
                   key={txn.id}
-                  className="flex items-center gap-4 p-3 rounded-lg hover-elevate"
+                  className="flex items-center gap-4 p-3 rounded-lg hover-elevate cursor-pointer active-elevate-2 transition-transform"
+                  onClick={() => onItemClick ? onItemClick(txn.id) : setLocation("/transactions")}
                   data-testid={`transaction-item-${txn.id}`}
                 >
                   <div className={`flex items-center justify-center w-10 h-10 rounded-full ${merchantIcon.bgColor}`}>

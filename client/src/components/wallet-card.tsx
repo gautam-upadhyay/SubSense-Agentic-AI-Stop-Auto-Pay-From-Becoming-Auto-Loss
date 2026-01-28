@@ -1,5 +1,6 @@
-import { Wallet, TrendingUp, TrendingDown } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useLocation } from "wouter";
 import type { Wallet as WalletType } from "@shared/schema";
 
 interface WalletCardProps {
@@ -8,6 +9,7 @@ interface WalletCardProps {
 }
 
 export function WalletCard({ wallet, isLoading }: WalletCardProps) {
+  const [, setLocation] = useLocation();
   if (isLoading) {
     return (
       <Card className="overflow-hidden">
@@ -31,8 +33,12 @@ export function WalletCard({ wallet, isLoading }: WalletCardProps) {
   };
 
   return (
-    <Card className="overflow-hidden" data-testid="card-wallet">
-      <div className="bg-gradient-to-br from-primary to-primary/80 p-6 text-primary-foreground">
+    <Card 
+      className="overflow-visible cursor-pointer hover-elevate active-elevate-2 transition-transform" 
+      onClick={() => setLocation("/transactions")}
+      data-testid="card-wallet"
+    >
+      <div className="bg-gradient-to-br from-primary to-primary/80 p-6 text-primary-foreground rounded-lg">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Wallet className="w-5 h-5" />
@@ -48,9 +54,15 @@ export function WalletCard({ wallet, isLoading }: WalletCardProps) {
             {wallet ? formatCurrency(wallet.balance) : "₹0"}
           </span>
         </div>
-        <p className="text-sm opacity-75">
-          Last updated: {wallet ? new Date(wallet.lastUpdated).toLocaleDateString() : "—"}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm opacity-75">
+            Last updated: {wallet ? new Date(wallet.lastUpdated).toLocaleDateString() : "—"}
+          </p>
+          <div className="flex items-center gap-1 text-xs opacity-75 hover:opacity-100 transition-opacity">
+            <span>View transactions</span>
+            <ArrowRight className="w-3 h-3" />
+          </div>
+        </div>
       </div>
     </Card>
   );
