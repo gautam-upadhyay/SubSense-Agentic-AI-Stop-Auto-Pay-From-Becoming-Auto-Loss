@@ -1,7 +1,7 @@
 import type { MonitoringResult } from "./monitoringAgent.js";
 
 export interface Anomaly {
-  type: "price_increase" | "unused_subscription" | "trial_to_paid" | "duplicate_service" | "upcoming_renewal";
+  type: "price_increase" | "unused_subscription" | "trial_to_paid" | "duplicate_service" | "upcoming_renewal" | "plan_drift" | "small_charges";
   subscriptionId: string;
   merchant: string;
   severity: "high" | "medium" | "low";

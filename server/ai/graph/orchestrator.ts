@@ -38,9 +38,11 @@ export class AgentOrchestrator {
       
       log(`\n[Step 2/5] Running Monitoring Agent...`);
       const monitoringResult = await monitoringAgent.observe(subscriptions, transactions);
+      const currentStatuses = await storage.getAgentStatuses();
+      const monitoringObservations = currentStatuses.find(a => a.name === "Monitoring Agent")?.observations ?? 0;
       await storage.updateAgentStatus("Monitoring Agent", { 
         status: "active", 
-        observations: (await storage.getAgentStatuses()).find(a => a.name === "Monitoring Agent")?.observations ?? 0 + 1 
+        observations: monitoringObservations + 1 
       });
       
       log(`\n[Step 3/5] Running Anomaly Detection Agent...`);

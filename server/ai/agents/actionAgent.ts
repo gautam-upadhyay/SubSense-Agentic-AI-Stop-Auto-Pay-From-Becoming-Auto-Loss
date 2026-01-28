@@ -21,7 +21,7 @@ export class ActionRecommendationAgent {
       const { assessment, title, description, aiExplanation, recommendation } = reasonedAlert;
       const { anomaly, monthlyLoss, yearlyLoss, riskLevel } = assessment;
       
-      let alertType: "price_increase" | "unused_subscription" | "trial_to_paid" | "plan_drift";
+      let alertType: "price_increase" | "unused_subscription" | "trial_to_paid" | "plan_drift" | "upcoming_renewal" | "duplicate_service" | "small_charges";
       let availableActions: string[];
       let suggestedAction: string;
       
@@ -37,14 +37,24 @@ export class ActionRecommendationAgent {
           suggestedAction = riskLevel === "high" ? "Cancel subscription" : "Pause subscription";
           break;
         case "upcoming_renewal":
-          alertType = "unused_subscription";
+          alertType = "upcoming_renewal";
           availableActions = ["Allow renewal", "Cancel before renewal", "Set reminder", "Dismiss"];
           suggestedAction = "Review usage before renewal";
           break;
         case "duplicate_service":
-          alertType = "plan_drift";
+          alertType = "duplicate_service";
           availableActions = ["Keep all", "Compare and choose one", "Dismiss"];
           suggestedAction = "Compare and choose one";
+          break;
+        case "trial_to_paid":
+          alertType = "trial_to_paid";
+          availableActions = ["Keep subscription", "Cancel before trial ends", "Dismiss"];
+          suggestedAction = "Review before trial ends";
+          break;
+        case "small_charges":
+          alertType = "small_charges";
+          availableActions = ["Keep", "Cancel", "Dismiss"];
+          suggestedAction = "Review if needed";
           break;
         default:
           alertType = "unused_subscription";
