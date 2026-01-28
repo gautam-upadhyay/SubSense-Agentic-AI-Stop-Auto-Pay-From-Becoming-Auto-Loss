@@ -3,7 +3,7 @@ import { anomalyAgent } from "../agents/anomalyAgent.js";
 import { riskAgent } from "../agents/riskAgent.js";
 import { reasoningAgent } from "../agents/reasoningAgent.js";
 import { actionAgent, type ActionRecommendation } from "../agents/actionAgent.js";
-import { storage } from "../../storage.js";
+import { storage } from "../../sqliteStorage.js";
 
 export interface OrchestrationResult {
   success: boolean;

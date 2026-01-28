@@ -1,5 +1,5 @@
 import { orchestrator, type OrchestrationResult } from "./graph/orchestrator.js";
-import { storage } from "../storage.js";
+import { storage } from "../sqliteStorage.js";
 import { randomUUID } from "crypto";
 
 export interface SimulationResult extends OrchestrationResult {
@@ -65,7 +65,8 @@ export async function simulateAutoPay(): Promise<SimulationResult> {
   
   console.log(`[AI Runner] Transaction created: ${transaction.merchant} ₹${transaction.amount}`);
   
-  await storage.updateWalletBalance(-newAmount);
+  const wallet = await storage.getWallet();
+  await storage.updateWallet({ balance: wallet.balance - newAmount });
   
   const pipelineResult = await orchestrator.run();
   
