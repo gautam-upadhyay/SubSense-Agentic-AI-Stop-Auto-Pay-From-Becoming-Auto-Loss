@@ -1,6 +1,7 @@
 import { db, schema } from "./db/index.js";
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import type { IStorage } from "./storage.js";
 import type {
   Subscription,
   InsertSubscription,
@@ -13,25 +14,6 @@ import type {
   DashboardSummary,
   AuditLog,
 } from "@shared/schema";
-
-export interface IStorage {
-  getSubscriptions(): Promise<Subscription[]>;
-  getSubscription(id: string): Promise<Subscription | undefined>;
-  createSubscription(sub: InsertSubscription): Promise<Subscription>;
-  updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription | undefined>;
-  getTransactions(): Promise<Transaction[]>;
-  createTransaction(txn: InsertTransaction): Promise<Transaction>;
-  getAlerts(): Promise<Alert[]>;
-  getAlert(id: string): Promise<Alert | undefined>;
-  createAlert(alert: InsertAlert): Promise<Alert>;
-  updateAlert(id: string, updates: Partial<Alert>): Promise<Alert | undefined>;
-  getWallet(): Promise<Wallet>;
-  updateWallet(updates: Partial<Wallet>): Promise<Wallet>;
-  getAgentStatuses(): Promise<AgentStatus[]>;
-  updateAgentStatus(name: string, updates: Partial<AgentStatus>): Promise<AgentStatus | undefined>;
-  getDashboardSummary(): Promise<DashboardSummary>;
-  createAuditLog(log: Omit<AuditLog, "id">): Promise<AuditLog>;
-}
 
 export class SQLiteStorage implements IStorage {
   async getSubscriptions(): Promise<Subscription[]> {
@@ -46,23 +28,38 @@ export class SQLiteStorage implements IStorage {
 
   async createSubscription(sub: InsertSubscription): Promise<Subscription> {
     const id = uuidv4();
-    const newSub = { ...sub, id };
-    db.insert(schema.subscriptions).values(newSub).run();
-    return this.mapSubscription(newSub as any);
+    const dbRow = {
+      id,
+      merchant: sub.merchant,
+      merchantLogo: sub.merchantLogo ?? null,
+      currentAmount: sub.currentAmount,
+      previousAmount: sub.previousAmount ?? null,
+      billingCycle: sub.billingCycle,
+      status: sub.status,
+      lastUsedDate: sub.lastUsedDate ?? null,
+      nextBillingDate: sub.nextBillingDate,
+      category: sub.category,
+      autoPayEnabled: sub.autoPayEnabled,
+    };
+    db.insert(schema.subscriptions).values(dbRow).run();
+    const inserted = db.select().from(schema.subscriptions).where(eq(schema.subscriptions.id, id)).get();
+    return this.mapSubscription(inserted!);
   }
 
   async updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription | undefined> {
     const existing = await this.getSubscription(id);
     if (!existing) return undefined;
     
-    const dbUpdates: any = {};
+    const dbUpdates: Record<string, any> = {};
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.autoPayEnabled !== undefined) dbUpdates.autoPayEnabled = updates.autoPayEnabled;
     if (updates.currentAmount !== undefined) dbUpdates.currentAmount = updates.currentAmount;
     if (updates.previousAmount !== undefined) dbUpdates.previousAmount = updates.previousAmount;
     if (updates.lastUsedDate !== undefined) dbUpdates.lastUsedDate = updates.lastUsedDate;
     
-    db.update(schema.subscriptions).set(dbUpdates).where(eq(schema.subscriptions.id, id)).run();
+    if (Object.keys(dbUpdates).length > 0) {
+      db.update(schema.subscriptions).set(dbUpdates).where(eq(schema.subscriptions.id, id)).run();
+    }
     return this.getSubscription(id);
   }
 
@@ -73,9 +70,20 @@ export class SQLiteStorage implements IStorage {
 
   async createTransaction(txn: InsertTransaction): Promise<Transaction> {
     const id = uuidv4();
-    const newTxn = { ...txn, id };
-    db.insert(schema.transactions).values(newTxn).run();
-    return this.mapTransaction(newTxn as any);
+    const dbRow = {
+      id,
+      date: txn.date,
+      merchant: txn.merchant,
+      merchantLogo: txn.merchantLogo ?? null,
+      amount: txn.amount,
+      transactionType: txn.transactionType,
+      status: txn.status,
+      subscriptionId: txn.subscriptionId ?? null,
+      category: txn.category,
+    };
+    db.insert(schema.transactions).values(dbRow).run();
+    const inserted = db.select().from(schema.transactions).where(eq(schema.transactions.id, id)).get();
+    return this.mapTransaction(inserted!);
   }
 
   async getAlerts(): Promise<Alert[]> {
@@ -90,7 +98,7 @@ export class SQLiteStorage implements IStorage {
 
   async createAlert(alert: InsertAlert): Promise<Alert> {
     const id = uuidv4();
-    const dbAlert = {
+    const dbRow = {
       id,
       type: alert.type,
       severity: alert.severity,
@@ -107,7 +115,7 @@ export class SQLiteStorage implements IStorage {
       oldAmount: alert.oldAmount ?? null,
       newAmount: alert.newAmount ?? null,
     };
-    db.insert(schema.alerts).values(dbAlert).run();
+    db.insert(schema.alerts).values(dbRow).run();
     
     await this.createAuditLog({
       timestamp: new Date().toISOString(),
@@ -118,17 +126,20 @@ export class SQLiteStorage implements IStorage {
       userApproved: false,
     });
     
-    return this.mapAlert({ ...dbAlert } as any);
+    const inserted = db.select().from(schema.alerts).where(eq(schema.alerts.id, id)).get();
+    return this.mapAlert(inserted!);
   }
 
   async updateAlert(id: string, updates: Partial<Alert>): Promise<Alert | undefined> {
     const existing = await this.getAlert(id);
     if (!existing) return undefined;
     
-    const dbUpdates: any = {};
+    const dbUpdates: Record<string, any> = {};
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     
-    db.update(schema.alerts).set(dbUpdates).where(eq(schema.alerts.id, id)).run();
+    if (Object.keys(dbUpdates).length > 0) {
+      db.update(schema.alerts).set(dbUpdates).where(eq(schema.alerts.id, id)).run();
+    }
     return this.getAlert(id);
   }
 
@@ -155,12 +166,14 @@ export class SQLiteStorage implements IStorage {
     const existing = db.select().from(schema.agentStatuses).where(eq(schema.agentStatuses.name, name)).get();
     if (!existing) return undefined;
     
-    const dbUpdates: any = {};
+    const dbUpdates: Record<string, any> = {};
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.lastRun !== undefined) dbUpdates.lastRun = updates.lastRun;
     if (updates.observations !== undefined) dbUpdates.observations = updates.observations;
     
-    db.update(schema.agentStatuses).set(dbUpdates).where(eq(schema.agentStatuses.name, name)).run();
+    if (Object.keys(dbUpdates).length > 0) {
+      db.update(schema.agentStatuses).set(dbUpdates).where(eq(schema.agentStatuses.name, name)).run();
+    }
     return db.select().from(schema.agentStatuses).where(eq(schema.agentStatuses.name, name)).get();
   }
 
@@ -201,61 +214,70 @@ export class SQLiteStorage implements IStorage {
 
   async createAuditLog(log: Omit<AuditLog, "id">): Promise<AuditLog> {
     const id = uuidv4();
-    const auditLog = { ...log, id };
-    db.insert(schema.auditLogs).values(auditLog).run();
+    const dbRow = {
+      id,
+      timestamp: log.timestamp,
+      action: log.action,
+      entityType: log.entityType,
+      entityId: log.entityId,
+      details: log.details,
+      userApproved: log.userApproved,
+    };
+    db.insert(schema.auditLogs).values(dbRow).run();
     console.log(`[AUDIT] ${log.action}: ${log.details}`);
-    return auditLog;
+    const inserted = db.select().from(schema.auditLogs).where(eq(schema.auditLogs.id, id)).get();
+    return inserted!;
   }
 
-  private mapSubscription(row: any): Subscription {
+  private mapSubscription(row: typeof schema.subscriptions.$inferSelect): Subscription {
     return {
       id: row.id,
       merchant: row.merchant,
-      merchantLogo: row.merchantLogo ?? row.merchant_logo,
-      currentAmount: row.currentAmount ?? row.current_amount,
-      previousAmount: row.previousAmount ?? row.previous_amount,
-      billingCycle: row.billingCycle ?? row.billing_cycle,
+      merchantLogo: row.merchantLogo ?? undefined,
+      currentAmount: row.currentAmount,
+      previousAmount: row.previousAmount ?? undefined,
+      billingCycle: row.billingCycle,
       status: row.status,
-      lastUsedDate: row.lastUsedDate ?? row.last_used_date,
-      nextBillingDate: row.nextBillingDate ?? row.next_billing_date,
+      lastUsedDate: row.lastUsedDate ?? undefined,
+      nextBillingDate: row.nextBillingDate,
       category: row.category,
-      autoPayEnabled: Boolean(row.autoPayEnabled ?? row.auto_pay_enabled),
+      autoPayEnabled: row.autoPayEnabled,
     };
   }
 
-  private mapTransaction(row: any): Transaction {
+  private mapTransaction(row: typeof schema.transactions.$inferSelect): Transaction {
     return {
       id: row.id,
       date: row.date,
       merchant: row.merchant,
-      merchantLogo: row.merchantLogo ?? row.merchant_logo,
+      merchantLogo: row.merchantLogo ?? undefined,
       amount: row.amount,
-      transactionType: row.transactionType ?? row.transaction_type,
+      transactionType: row.transactionType,
       status: row.status,
-      subscriptionId: row.subscriptionId ?? row.subscription_id,
+      subscriptionId: row.subscriptionId ?? undefined,
       category: row.category,
     };
   }
 
-  private mapAlert(row: any): Alert {
+  private mapAlert(row: typeof schema.alerts.$inferSelect): Alert {
     return {
       id: row.id,
       type: row.type,
       severity: row.severity,
-      subscriptionId: row.subscriptionId ?? row.subscription_id,
+      subscriptionId: row.subscriptionId,
       merchant: row.merchant,
       title: row.title,
       description: row.description,
       financialImpact: {
-        monthly: row.financialImpactMonthly ?? row.financial_impact_monthly,
-        yearly: row.financialImpactYearly ?? row.financial_impact_yearly,
+        monthly: row.financialImpactMonthly,
+        yearly: row.financialImpactYearly,
       },
       recommendation: row.recommendation,
-      aiExplanation: row.aiExplanation ?? row.ai_explanation,
+      aiExplanation: row.aiExplanation,
       status: row.status,
-      createdAt: row.createdAt ?? row.created_at,
-      oldAmount: row.oldAmount ?? row.old_amount,
-      newAmount: row.newAmount ?? row.new_amount,
+      createdAt: row.createdAt,
+      oldAmount: row.oldAmount ?? undefined,
+      newAmount: row.newAmount ?? undefined,
     };
   }
 }

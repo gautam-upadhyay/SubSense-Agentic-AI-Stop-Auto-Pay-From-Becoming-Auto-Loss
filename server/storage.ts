@@ -9,12 +9,13 @@ import type {
   Wallet,
   AgentStatus,
   DashboardSummary,
+  AuditLog,
 } from "@shared/schema";
 
 export interface IStorage {
   // Wallet
   getWallet(): Promise<Wallet>;
-  updateWalletBalance(amount: number): Promise<Wallet>;
+  updateWallet(updates: Partial<Wallet>): Promise<Wallet>;
 
   // Subscriptions
   getSubscriptions(): Promise<Subscription[]>;
@@ -34,10 +35,13 @@ export interface IStorage {
 
   // Agents
   getAgentStatuses(): Promise<AgentStatus[]>;
-  updateAgentStatus(name: string, updates: Partial<AgentStatus>): Promise<void>;
+  updateAgentStatus(name: string, updates: Partial<AgentStatus>): Promise<AgentStatus | undefined>;
 
   // Dashboard
   getDashboardSummary(): Promise<DashboardSummary>;
+
+  // Audit
+  createAuditLog(log: Omit<AuditLog, "id">): Promise<AuditLog>;
 }
 
 export class MemStorage implements IStorage {
@@ -316,8 +320,10 @@ export class MemStorage implements IStorage {
     return this.wallet;
   }
 
-  async updateWalletBalance(amount: number): Promise<Wallet> {
-    this.wallet.balance += amount;
+  async updateWallet(updates: Partial<Wallet>): Promise<Wallet> {
+    if (updates.balance !== undefined) {
+      this.wallet.balance = updates.balance;
+    }
     this.wallet.lastUpdated = new Date().toISOString();
     return this.wallet;
   }
@@ -393,11 +399,22 @@ export class MemStorage implements IStorage {
     return Array.from(this.agentStatuses.values());
   }
 
-  async updateAgentStatus(name: string, updates: Partial<AgentStatus>): Promise<void> {
+  async updateAgentStatus(name: string, updates: Partial<AgentStatus>): Promise<AgentStatus | undefined> {
     const agent = this.agentStatuses.get(name);
     if (agent) {
-      this.agentStatuses.set(name, { ...agent, ...updates });
+      const updated = { ...agent, ...updates };
+      this.agentStatuses.set(name, updated);
+      return updated;
     }
+    return undefined;
+  }
+
+  // Audit methods
+  async createAuditLog(log: Omit<AuditLog, "id">): Promise<AuditLog> {
+    const id = randomUUID();
+    const auditLog: AuditLog = { id, ...log };
+    console.log(`[AUDIT] ${log.action}: ${log.details}`);
+    return auditLog;
   }
 
   // Dashboard summary
