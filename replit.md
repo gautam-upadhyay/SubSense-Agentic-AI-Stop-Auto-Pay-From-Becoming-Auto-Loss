@@ -14,12 +14,12 @@ The AI operates using an agentic loop (Observe → Reason → Decide → Act) wh
 
 ## Recent Changes
 
-- **January 2026**: Major AI upgrade with LangChain integration:
-  - Real AI agent framework with LangChain tools
-  - 6 specialized agents with orchestrated pipeline
-  - Terminal logging for agent activity (hackathon demo-ready)
-  - Human-in-the-loop safety with audit trail
-  - New use cases: annual renewals, duplicate services, gym memberships
+- **January 2026**: SQLite Database + LangGraph + CrewAI-Style Upgrade:
+  - Migrated from in-memory storage to SQLite database with Drizzle ORM
+  - Integrated LangGraph (@langchain/langgraph) for state machine orchestration
+  - Added CrewAI-inspired multi-agent framework for team-based orchestration
+  - Database persistence for subscriptions, transactions, alerts, audit logs
+  - Human-in-the-loop safety with full audit trail in database
   - 10 subscriptions including Fitness First gym membership
   - Professional FinTech design with blue primary color, Inter font
 
@@ -46,42 +46,58 @@ Preferred communication style: Simple, everyday language.
 - **Validation**: Zod schemas for request body validation
 
 ### Data Storage
-- **ORM**: Drizzle ORM with PostgreSQL dialect
-- **Schema Location**: `shared/schema.ts` (Zod-based validation)
-- **Current Implementation**: In-memory storage (`MemStorage` class) with interface for database swap
-- **Audit Trail**: Logging all user actions and AI recommendations
+- **Database**: SQLite with better-sqlite3 driver
+- **ORM**: Drizzle ORM with SQLite dialect
+- **Schema Location**: `server/db/schema.ts` (Drizzle schema) + `shared/schema.ts` (Zod types)
+- **Storage Layer**: `server/sqliteStorage.ts` implementing `IStorage` interface
+- **Audit Trail**: Persisted to `audit_logs` table with all user actions and AI recommendations
 
-### Agentic AI System (LangChain-Powered)
+### Agentic AI System
 
-The AI uses LangChain for LLM interface and tool execution:
+The AI system supports two orchestration modes:
+
+#### LangGraph Orchestration (Primary)
+Uses LangGraph state machine for deterministic agent pipeline:
 
 **AI Stack:**
-- LangChain (@langchain/core, @langchain/openai)
-- OpenAI API (optional, falls back to templates)
-- Low-temperature prompts for deterministic finance reasoning
+- @langchain/langgraph for state graph orchestration
+- @langchain/core for LLM abstractions
+- @langchain/openai for OpenAI integration (optional, falls back to templates)
 
-**Agent Pipeline (Orchestration Flow):**
+**State Machine Flow:**
 ```
-DB → Monitor → Detect → Predict → Explain → Recommend → User Approval
+START → fetchData → monitoring → anomalyDetection → [conditional]
+                                                     ├── riskPrediction → reasoning → action → END
+                                                     └── END (if no anomalies)
 ```
 
-**Agents Implemented:**
-1. **Monitoring Agent**: Observes transactions, detects patterns (price changes, unused, renewals)
-2. **Anomaly Detection Agent**: Detects price increases >15%, unused 30+ days, duplicates
-3. **Risk Prediction Agent**: Calculates financial loss, assigns severity (high/medium/low)
-4. **Reasoning Agent**: Generates natural language explanations (LLM or template-based)
-5. **Action Recommendation Agent**: Suggests actions, enforces human-in-the-loop
+**Graph Nodes:**
+1. `fetchData`: Load subscriptions and transactions from SQLite
+2. `monitoring`: Observe patterns (price changes, unused, renewals)
+3. `anomalyDetection`: Detect anomalies with conditional routing
+4. `riskPrediction`: Calculate financial impact and severity
+5. `reasoning`: Generate natural language explanations
+6. `action`: Create alerts and recommendations
 
-**LangChain Tools:**
-- `getSubscriptions`: Fetch all subscriptions from DB
-- `getTransactions`: Fetch transaction history
-- `calculateLoss`: Calculate monthly/yearly financial impact
-- `getSubscriptionById`: Fetch specific subscription
+#### CrewAI-Style Orchestration (Alternative)
+Team-based multi-agent framework inspired by CrewAI:
+
+**Crew Members:**
+1. **Monitoring Specialist**: Observes subscription activity
+2. **Anomaly Detective**: Finds hidden patterns
+3. **Risk Assessor**: Quantifies financial risk
+4. **Explanation Expert**: Generates human-readable explanations
+5. **Action Advisor**: Recommends protective actions
+
+**Task Pipeline:**
+- Tasks executed sequentially with context passing
+- Each agent receives output from previous agents
+- Final output contains all recommendations
 
 **Human-in-the-Loop Safety:**
 - AI only recommends, never auto-executes
 - All actions require user approval via UI
-- Full audit trail logging in terminal
+- Full audit trail in SQLite database
 
 ## Project Structure
 
@@ -111,23 +127,46 @@ DB → Monitor → Detect → Predict → Explain → Recommend → User Approva
 │   └── index.html           # Entry point with SEO meta tags
 ├── server/
 │   ├── ai/                  # Agentic AI Layer
-│   │   ├── agents/          # Agent implementations
+│   │   ├── agents/          # Individual agent implementations
 │   │   │   ├── monitoringAgent.ts
 │   │   │   ├── anomalyAgent.ts
 │   │   │   ├── riskAgent.ts
 │   │   │   ├── reasoningAgent.ts
 │   │   │   └── actionAgent.ts
+│   │   ├── crew/            # CrewAI-style framework
+│   │   │   ├── types.ts     # Crew/Agent/Task types
+│   │   │   ├── agent.ts     # Base CrewAgent class
+│   │   │   ├── crew.ts      # Crew orchestrator
+│   │   │   ├── subscriptionCrew.ts  # Subscription protection crew
+│   │   │   └── index.ts     # Exports
+│   │   ├── graph/           # LangGraph orchestration
+│   │   │   ├── langgraphOrchestrator.ts  # State machine pipeline
+│   │   │   └── orchestrator.ts           # Legacy orchestrator
 │   │   ├── tools/           # LangChain tools
 │   │   │   └── subscriptionTools.ts
-│   │   ├── graph/           # Orchestration
-│   │   │   └── orchestrator.ts
-│   │   └── runner.ts        # Pipeline entry point
+│   │   └── runner.ts        # Pipeline entry point (uses LangGraph)
+│   ├── db/                  # Database layer
+│   │   ├── schema.ts        # Drizzle ORM schema
+│   │   ├── init.ts          # Database initialization and seeding
+│   │   └── index.ts         # Database connection
 │   ├── routes.ts            # API endpoints with Zod validation
-│   ├── storage.ts           # In-memory storage with mock data
+│   ├── storage.ts           # IStorage interface + MemStorage
+│   ├── sqliteStorage.ts     # SQLite implementation of IStorage
 │   └── index.ts             # Express server entry
-└── shared/
-    └── schema.ts            # Data models and Zod schemas
+├── shared/
+│   └── schema.ts            # Data models and Zod schemas
+└── subsense.db              # SQLite database file
 ```
+
+## Database Schema
+
+**Tables:**
+- `subscriptions`: 10 subscriptions with merchant, amount, billing cycle, status
+- `transactions`: Auto-pay transactions with merchant, amount, date
+- `alerts`: AI-generated alerts with type, severity, financial impact
+- `audit_logs`: User actions and AI recommendations
+- `wallet`: User wallet balance
+- `agent_statuses`: Status of each AI agent
 
 ## API Endpoints
 
@@ -149,12 +188,14 @@ DB → Monitor → Detect → Predict → Explain → Recommend → User Approva
 ## External Dependencies
 
 ### AI/ML
+- **LangGraph**: @langchain/langgraph for state machine orchestration
 - **LangChain**: @langchain/core, @langchain/openai for LLM interface
 - **OpenAI API**: Optional for dynamic reasoning (falls back to templates)
 
 ### Database
-- **PostgreSQL**: Required for production (DATABASE_URL environment variable)
-- **Drizzle Kit**: Database migrations via `db:push` command
+- **SQLite**: better-sqlite3 for local persistence
+- **Drizzle ORM**: Type-safe ORM with SQLite dialect
+- **uuid**: For generating unique IDs
 
 ### UI Component Libraries
 - **Radix UI**: Headless accessible components
@@ -170,14 +211,17 @@ DB → Monitor → Detect → Predict → Explain → Recommend → User Approva
 
 The application runs on port 5000 with the command `npm run dev`. The Express server serves both the API and the Vite-bundled frontend.
 
+Database is automatically initialized and seeded on first run.
+
 ## Demo Features
 
-- **Simulate Auto-Pay**: Click the button on the dashboard to trigger a random auto-pay transaction with 30% chance of price increase. Watch terminal for AI agent logs.
+- **Simulate Auto-Pay**: Click the button on the dashboard to trigger a random auto-pay transaction with 30% chance of price increase. Watch terminal for LangGraph pipeline logs.
 - **Terminal Logging**: All agent activity is logged to terminal for hackathon demo visibility.
 - **Alert Resolution**: On the AI Alerts page, expand alerts to see AI explanations and take actions (Cancel Auto-Pay, Keep, or Dismiss).
 - **Human-in-the-Loop**: All actions require explicit user approval - AI never auto-executes.
 - **Theme Toggle**: Switch between light and dark mode.
+- **Database Persistence**: All data persists across server restarts in SQLite.
 
 ## One-Line Tech Summary
 
-"SubSense uses React and Tailwind for UI, Express with in-memory storage for backend, and a real Agentic AI layer built with LangChain—ensuring explainable, user-controlled financial protection."
+"SubSense uses React and Tailwind for UI, Express with SQLite persistence for backend, and a real Agentic AI layer built with LangGraph + CrewAI-style orchestration—ensuring explainable, user-controlled financial protection."

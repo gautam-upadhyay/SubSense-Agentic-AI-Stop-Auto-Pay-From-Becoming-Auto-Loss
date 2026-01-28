@@ -1,6 +1,8 @@
-import { orchestrator, type OrchestrationResult } from "./graph/orchestrator.js";
+import { runLangGraphPipeline, type LangGraphOrchestrationResult } from "./graph/langgraphOrchestrator.js";
 import { storage } from "../sqliteStorage.js";
 import { randomUUID } from "crypto";
+
+export type OrchestrationResult = LangGraphOrchestrationResult;
 
 export interface SimulationResult extends OrchestrationResult {
   transaction?: {
@@ -13,8 +15,8 @@ export interface SimulationResult extends OrchestrationResult {
 }
 
 export async function runAgentPipeline(): Promise<OrchestrationResult> {
-  console.log("\n[AI Runner] Triggering full agent pipeline...");
-  return await orchestrator.run();
+  console.log("\n[AI Runner] Triggering LangGraph agent pipeline...");
+  return await runLangGraphPipeline();
 }
 
 export async function simulateAutoPay(): Promise<SimulationResult> {
@@ -68,7 +70,7 @@ export async function simulateAutoPay(): Promise<SimulationResult> {
   const wallet = await storage.getWallet();
   await storage.updateWallet({ balance: wallet.balance - newAmount });
   
-  const pipelineResult = await orchestrator.run();
+  const pipelineResult = await runLangGraphPipeline();
   
   return {
     ...pipelineResult,
