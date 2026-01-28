@@ -1,6 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import {
   Eye,
   AlertTriangle,
@@ -12,6 +15,8 @@ import {
   ArrowRight,
   Bot,
   Brain,
+  Play,
+  RefreshCw,
 } from "lucide-react";
 import type { AgentStatus } from "@shared/schema";
 
@@ -97,8 +102,32 @@ const agentConfig: Record<string, {
 };
 
 export default function Agents() {
+  const { toast } = useToast();
+
   const { data: agents, isLoading } = useQuery<AgentStatus[]>({
     queryKey: ["/api/agents/status"],
+  });
+
+  const runPipelineMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/agents/run");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/agents/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
+      toast({
+        title: "AI Pipeline Complete",
+        description: "All agents have completed their analysis. Check alerts for any new findings.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Pipeline Error",
+        description: "Failed to run AI pipeline. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const getStatusBadge = (status: string) => {
@@ -142,11 +171,26 @@ export default function Agents() {
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto" data-testid="page-agents">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Agentic AI System</h1>
-        <p className="text-muted-foreground">
-          Autonomous agents protecting your subscriptions
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Agentic AI System</h1>
+          <p className="text-muted-foreground">
+            Autonomous agents protecting your subscriptions
+          </p>
+        </div>
+        <Button
+          onClick={() => runPipelineMutation.mutate()}
+          disabled={runPipelineMutation.isPending}
+          className="w-full sm:w-auto"
+          data-testid="button-run-pipeline"
+        >
+          {runPipelineMutation.isPending ? (
+            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Play className="w-4 h-4 mr-2" />
+          )}
+          Run Pipeline Manually
+        </Button>
       </div>
 
       <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">

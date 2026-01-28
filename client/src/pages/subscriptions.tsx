@@ -12,6 +12,7 @@ import {
   Play,
   X,
   TrendingUp,
+  RefreshCw,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -354,8 +355,13 @@ export default function Subscriptions() {
                 : `Resume ${confirmAction?.subscription.merchant} subscription?`}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmAction(null)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setConfirmAction(null)}
+              className="w-full sm:w-auto"
+              data-testid="button-cancel-dialog"
+            >
               Cancel
             </Button>
             <Button
@@ -369,8 +375,12 @@ export default function Subscriptions() {
                 }
               }}
               disabled={updateSubscriptionMutation.isPending}
+              className="w-full sm:w-auto"
               data-testid="button-confirm-action"
             >
+              {updateSubscriptionMutation.isPending ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
               {confirmAction?.type === "cancel"
                 ? "Cancel Subscription"
                 : confirmAction?.type === "pause"

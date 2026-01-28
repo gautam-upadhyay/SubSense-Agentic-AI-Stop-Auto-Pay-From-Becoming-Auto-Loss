@@ -241,27 +241,33 @@ export default function Alerts() {
                 <span className="font-medium">{alert.recommendation}</span>
               </div>
               {isPending && (
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <Button
                     variant="ghost"
+                    size="sm"
                     onClick={() => dismissAlertMutation.mutate(alert.id)}
                     disabled={dismissAlertMutation.isPending}
+                    className="w-full sm:w-auto"
                     data-testid={`button-dismiss-${alert.id}`}
                   >
                     Dismiss
                   </Button>
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={() => resolveAlertMutation.mutate({ id: alert.id, action: "keep" })}
                     disabled={resolveAlertMutation.isPending}
+                    className="w-full sm:w-auto"
                     data-testid={`button-keep-${alert.id}`}
                   >
                     <Check className="w-4 h-4 mr-1" />
                     Keep
                   </Button>
                   <Button
+                    size="sm"
                     onClick={() => resolveAlertMutation.mutate({ id: alert.id, action: "cancel" })}
                     disabled={resolveAlertMutation.isPending}
+                    className="w-full sm:w-auto"
                     data-testid={`button-cancel-${alert.id}`}
                   >
                     <X className="w-4 h-4 mr-1" />

@@ -221,16 +221,17 @@ export function AlertList({
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="text-sm text-muted-foreground">
                           Recommendation: <span className="font-medium text-foreground">{alert.recommendation}</span>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                           {onDismiss && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => onDismiss(alert.id)}
+                              className="w-full sm:w-auto"
                               data-testid={`button-dismiss-${alert.id}`}
                             >
                               Dismiss
@@ -242,6 +243,7 @@ export function AlertList({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => onResolve(alert.id, "keep")}
+                                className="w-full sm:w-auto"
                                 data-testid={`button-keep-${alert.id}`}
                               >
                                 <Check className="w-4 h-4 mr-1" />
@@ -251,6 +253,7 @@ export function AlertList({
                                 variant="default"
                                 size="sm"
                                 onClick={() => onResolve(alert.id, "cancel")}
+                                className="w-full sm:w-auto"
                                 data-testid={`button-cancel-${alert.id}`}
                               >
                                 <X className="w-4 h-4 mr-1" />
