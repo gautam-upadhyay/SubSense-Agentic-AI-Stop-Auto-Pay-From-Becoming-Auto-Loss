@@ -30,7 +30,6 @@ import {
   SiDropbox,
   SiNotion,
   SiLinkedin,
-  SiAmazonaws,
 } from "react-icons/si";
 import { FaDumbbell, FaGraduationCap, FaCloud, FaGamepad } from "react-icons/fa";
 import type { Payment } from "@shared/schema";
@@ -59,7 +58,7 @@ const getPlatformIcon = (logo: string, size: string = "w-12 h-12") => {
     case "spotify": return <SiSpotify className={`${size} text-green-500`} />;
     case "youtube": return <SiYoutube className={`${size} text-red-500`} />;
     case "apple": return <SiApple className={`${size} text-gray-800 dark:text-gray-200`} />;
-    case "aws": return <SiAmazonaws className={`${size} text-orange-400`} />;
+    case "aws": return <FaCloud className={`${size} text-orange-400`} />;
     case "adobe": return <SiAdobe className={`${size} text-red-500`} />;
     case "dropbox": return <SiDropbox className={`${size} text-blue-500`} />;
     case "notion": return <SiNotion className={`${size} text-gray-800 dark:text-gray-200`} />;

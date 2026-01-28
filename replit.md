@@ -14,6 +14,14 @@ The AI operates using an agentic loop (Observe → Reason → Decide → Act) wh
 
 ## Recent Changes
 
+- **January 2026**: Subscription Marketplace & Payment Gateway:
+  - Added subscription marketplace with 14+ popular platforms (Netflix, Spotify, Amazon Prime, etc.)
+  - Implemented simulated payment gateway with UPI, QR code, and card payment options
+  - QR code payments with mobile-friendly scanning page and real-time status polling
+  - Payment success automatically creates subscription with auto-pay and triggers AI monitoring
+  - Demo/sandbox mode throughout - no real money is transferred
+  - Payment flow: Marketplace → Payment page → QR/UPI/Card → Processing → Success
+
 - **January 2026**: SQLite Database + LangGraph + CrewAI-Style Upgrade:
   - Migrated from in-memory storage to SQLite database with Drizzle ORM
   - Integrated LangGraph (@langchain/langgraph) for state machine orchestration
@@ -116,6 +124,9 @@ Team-based multi-agent framework inspired by CrewAI:
 │   │   │   └── agent-status.tsx
 │   │   ├── pages/           # Page components
 │   │   │   ├── dashboard.tsx
+│   │   │   ├── marketplace.tsx    # Subscription marketplace
+│   │   │   ├── payment.tsx        # Payment page with UPI/QR/Card
+│   │   │   ├── qr-pay.tsx         # Mobile QR payment page
 │   │   │   ├── subscriptions.tsx
 │   │   │   ├── transactions.tsx
 │   │   │   ├── alerts.tsx
@@ -167,6 +178,7 @@ Team-based multi-agent framework inspired by CrewAI:
 - `audit_logs`: User actions and AI recommendations
 - `wallet`: User wallet balance
 - `agent_statuses`: Status of each AI agent
+- `payments`: Payment sessions with QR codes, status tracking, and subscription linking
 
 ## API Endpoints
 
@@ -184,6 +196,10 @@ Team-based multi-agent framework inspired by CrewAI:
 | `/api/agents/run` | POST | Manually trigger AI pipeline |
 | `/api/simulate/autopay` | POST | Simulate auto-pay transaction |
 | `/api/analytics/monthly-trend` | GET | Monthly spending data |
+| `/api/payments/initiate` | POST | Initiate payment with QR code generation |
+| `/api/payments/confirm` | POST | Confirm payment and create subscription |
+| `/api/payments/webhook` | POST | Handle payment webhooks from mobile QR page |
+| `/api/payments/:id` | GET | Get payment status for polling |
 
 ## External Dependencies
 
@@ -196,6 +212,7 @@ Team-based multi-agent framework inspired by CrewAI:
 - **SQLite**: better-sqlite3 for local persistence
 - **Drizzle ORM**: Type-safe ORM with SQLite dialect
 - **uuid**: For generating unique IDs
+- **qrcode**: QR code generation for payment simulation
 
 ### UI Component Libraries
 - **Radix UI**: Headless accessible components
@@ -215,6 +232,8 @@ Database is automatically initialized and seeded on first run.
 
 ## Demo Features
 
+- **Subscription Marketplace**: Browse 14+ popular platforms across categories (Entertainment, Shopping, Productivity, Fitness, etc.) and subscribe with simulated payments.
+- **Simulated Payment Gateway**: Choose from QR code, UPI, or card payments. QR codes can be scanned on mobile for a realistic payment experience.
 - **Simulate Auto-Pay**: Click the button on the dashboard to trigger a random auto-pay transaction with 30% chance of price increase. Watch terminal for LangGraph pipeline logs.
 - **Terminal Logging**: All agent activity is logged to terminal for hackathon demo visibility.
 - **Alert Resolution**: On the AI Alerts page, expand alerts to see AI explanations and take actions (Cancel Auto-Pay, Keep, or Dismiss).

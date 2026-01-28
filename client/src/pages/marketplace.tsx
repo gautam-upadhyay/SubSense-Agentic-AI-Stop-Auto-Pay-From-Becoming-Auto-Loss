@@ -16,7 +16,6 @@ import {
   SiDropbox,
   SiNotion,
   SiLinkedin,
-  SiAmazonaws,
 } from "react-icons/si";
 import { FaDumbbell, FaGraduationCap, FaCloud, FaGamepad } from "react-icons/fa";
 import type { Platform } from "@shared/schema";
@@ -168,7 +167,7 @@ const getPlatformIcon = (logo: string) => {
     case "apple":
       return <SiApple className={`${iconClass} text-gray-800 dark:text-gray-200`} />;
     case "aws":
-      return <SiAmazonaws className={`${iconClass} text-orange-400`} />;
+      return <FaCloud className={`${iconClass} text-orange-400`} />;
     case "adobe":
       return <SiAdobe className={`${iconClass} text-red-500`} />;
     case "dropbox":
