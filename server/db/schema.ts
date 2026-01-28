@@ -67,3 +67,18 @@ export const agentStatuses = sqliteTable("agent_statuses", {
   lastRun: text("last_run").notNull(),
   observations: integer("observations").notNull(),
 });
+
+export const payments = sqliteTable("payments", {
+  id: text("id").primaryKey(),
+  platform: text("platform").notNull(),
+  platformLogo: text("platform_logo"),
+  amount: real("amount").notNull(),
+  billingCycle: text("billing_cycle", { enum: ["monthly", "yearly"] }).notNull(),
+  paymentMethod: text("payment_method", { enum: ["upi", "qr", "card"] }),
+  status: text("status", { enum: ["pending", "processing", "success", "failed"] }).notNull(),
+  transactionId: text("transaction_id"),
+  subscriptionId: text("subscription_id"),
+  createdAt: text("created_at").notNull(),
+  completedAt: text("completed_at"),
+  qrCode: text("qr_code"),
+});

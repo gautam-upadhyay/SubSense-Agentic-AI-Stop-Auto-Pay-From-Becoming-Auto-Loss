@@ -74,6 +74,21 @@ export async function initializeDatabase() {
       last_run TEXT NOT NULL,
       observations INTEGER NOT NULL
     );
+    
+    CREATE TABLE IF NOT EXISTS payments (
+      id TEXT PRIMARY KEY,
+      platform TEXT NOT NULL,
+      platform_logo TEXT,
+      amount REAL NOT NULL,
+      billing_cycle TEXT NOT NULL,
+      payment_method TEXT,
+      status TEXT NOT NULL,
+      transaction_id TEXT,
+      subscription_id TEXT,
+      created_at TEXT NOT NULL,
+      completed_at TEXT,
+      qr_code TEXT
+    );
   `);
   
   const existingSubs = sqlite.prepare("SELECT COUNT(*) as count FROM subscriptions").get() as { count: number };

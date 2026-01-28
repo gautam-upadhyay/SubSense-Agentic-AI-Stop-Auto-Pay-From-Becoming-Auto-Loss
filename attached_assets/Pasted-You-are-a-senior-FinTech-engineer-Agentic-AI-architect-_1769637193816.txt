@@ -1,0 +1,268 @@
+You are a senior FinTech engineer + Agentic AI architect building a realistic UPI-style payment and auto-pay subscription system for a hackathon demo.
+
+This system must simulate real-world payments in real time, including QR scanning from a mobile phone, but must not process real money.
+
+🎯 OBJECTIVE
+
+Extend SubSense – Agentic AI for Subscription Protection with a real-time payment simulation layer that:
+
+Looks and behaves like Paytm / GPay / PhonePe
+
+Allows users to:
+
+Select subscription platforms (Netflix, Prime, AWS, Gym, Apple TV, etc.)
+
+Pay via QR code / UPI / Card (simulated)
+
+Create auto-pay subscriptions
+
+Instantly reflects transactions in SubSense
+
+Triggers AI agents automatically
+
+Is clearly marked as “Demo / Sandbox Mode”
+
+🧩 CORE FEATURES TO BUILD
+1️⃣ Subscription Marketplace (Sidebar)
+
+Create a sidebar with popular Indian & global platforms:
+
+Netflix
+
+Amazon Prime
+
+AWS
+
+Apple TV
+
+Spotify
+
+Gym / Coaching
+
+Cloud Services
+
+Education Platforms
+
+Each platform must have:
+
+Logo
+
+Monthly / yearly plan
+
+Auto-pay enabled by default
+
+2️⃣ Payment Page (Paytm / GPay Style UI)
+
+When user clicks a platform:
+
+Redirect to /pay/:platform
+
+Show:
+
+Platform name & logo
+
+Amount
+
+Payment methods:
+
+UPI
+
+QR Code
+
+Debit / Credit Card (dummy)
+
+“Proceed to Pay” button
+
+3️⃣ REAL-TIME QR PAYMENT SIMULATION (CRITICAL)
+QR Code Behavior
+
+Generate a dynamic QR code that encodes:
+
+transactionId
+
+amount
+
+platform
+
+QR must be scannable by any phone camera
+
+Phone Flow
+
+Scanning QR opens a mobile-friendly demo page
+
+Page mimics UPI app UI:
+
+“Pay ₹XXX to SubSense”
+
+Confirm button
+
+On confirm:
+
+Call backend webhook
+
+Mark payment as SUCCESS
+
+⚠️ Clearly show:
+
+“Demo Payment – No real money involved”
+
+4️⃣ Backend Payment Engine (Simulated Gateway)
+
+Create a dummy payment gateway service:
+
+POST /api/payments/initiate
+
+POST /api/payments/confirm
+
+POST /api/payments/webhook
+
+Logic:
+
+Simulate processing delay (1–2 sec)
+
+Mark transaction SUCCESS
+
+Store transaction in DB
+
+Create auto-pay subscription
+
+Update wallet balance
+
+5️⃣ Auto-Pay Subscription Creation
+
+After payment success:
+
+Create subscription entry:
+
+platform
+
+amount
+
+billing cycle
+
+next charge date
+
+Mark as AUTO_PAY_ACTIVE
+
+6️⃣ Real-Time Updates (Very Important)
+
+Use polling or WebSockets so that:
+
+Payment confirmation appears instantly
+
+Subscription appears instantly
+
+Transaction list updates live
+
+🗄️ DATABASE REQUIREMENTS (SQLite + Drizzle)
+
+Tables:
+
+wallet
+
+transactions
+
+subscriptions
+
+autopay_rules
+
+audit_logs
+
+All actions must be stored.
+
+🤖 AGENTIC AI INTEGRATION
+
+After every payment or auto-pay creation:
+
+Trigger LangGraph agent flow:
+
+Monitor → Detect → Predict → Explain → Recommend
+
+
+Agents must:
+
+Observe new subscription
+
+Calculate monthly & yearly loss
+
+Detect risky patterns later
+
+Generate explanations
+
+🧠 HUMAN-IN-THE-LOOP SAFETY
+
+AI must NEVER auto-cancel or auto-pay
+
+All actions require user confirmation
+
+Show confirmation modals
+
+Log all actions
+
+🎨 UI REQUIREMENTS (STRICT)
+
+UI must resemble:
+
+Paytm
+
+Google Pay
+
+PhonePe
+
+Stripe dashboards
+
+Use:
+
+React + TypeScript
+
+Tailwind CSS
+
+shadcn/ui
+
+Smooth transitions
+
+Clear success / failure screens
+
+📁 PROJECT STRUCTURE
+client/
+  ├── pages/
+  │   ├── Marketplace.tsx
+  │   ├── Payment.tsx
+  │   ├── QRPay.tsx
+  ├── components/
+  └── main.tsx
+
+server/
+  ├── payments/
+  ├── db/
+  ├── ai/
+  ├── routes/
+  └── server.ts
+
+🧑‍⚖️ JUDGE TRANSPARENCY (MANDATORY)
+
+Every payment screen must display:
+
+“Sandbox / Demo Mode – No real money is transferred”
+
+🎥 DEMO EXPECTATION
+
+User scans QR using real phone
+
+Confirms payment
+
+SubSense updates instantly
+
+Auto-pay subscription created
+
+AI reacts later
+
+❌ DO NOT
+
+Use real payment gateways
+
+Claim real UPI integration
+
+Hide demo labels
+
+✅ BUILD THIS SYSTEM NOW.

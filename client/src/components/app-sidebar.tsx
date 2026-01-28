@@ -7,6 +7,7 @@ import {
   Shield,
   Bot,
   Settings,
+  Store,
 } from "lucide-react";
 import {
   Sidebar,
@@ -26,6 +27,11 @@ const mainItems = [
     title: "Dashboard",
     url: "/",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Marketplace",
+    url: "/marketplace",
+    icon: Store,
   },
   {
     title: "Subscriptions",

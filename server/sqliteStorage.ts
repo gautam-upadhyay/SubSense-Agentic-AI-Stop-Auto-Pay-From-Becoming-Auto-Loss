@@ -13,6 +13,7 @@ import type {
   AgentStatus,
   DashboardSummary,
   AuditLog,
+  Payment,
 } from "@shared/schema";
 
 export class SQLiteStorage implements IStorage {
@@ -278,6 +279,66 @@ export class SQLiteStorage implements IStorage {
       createdAt: row.createdAt,
       oldAmount: row.oldAmount ?? undefined,
       newAmount: row.newAmount ?? undefined,
+    };
+  }
+
+  async createPayment(payment: Omit<Payment, "id">): Promise<Payment> {
+    const id = uuidv4();
+    const dbRow = {
+      id,
+      platform: payment.platform,
+      platformLogo: payment.platformLogo ?? null,
+      amount: payment.amount,
+      billingCycle: payment.billingCycle,
+      paymentMethod: payment.paymentMethod ?? null,
+      status: payment.status,
+      transactionId: payment.transactionId ?? null,
+      subscriptionId: payment.subscriptionId ?? null,
+      createdAt: payment.createdAt,
+      completedAt: payment.completedAt ?? null,
+      qrCode: payment.qrCode ?? null,
+    };
+    db.insert(schema.payments).values(dbRow).run();
+    const inserted = db.select().from(schema.payments).where(eq(schema.payments.id, id)).get();
+    return this.mapPayment(inserted!);
+  }
+
+  async getPayment(id: string): Promise<Payment | undefined> {
+    const row = db.select().from(schema.payments).where(eq(schema.payments.id, id)).get();
+    return row ? this.mapPayment(row) : undefined;
+  }
+
+  async updatePayment(id: string, updates: Partial<Payment>): Promise<Payment | undefined> {
+    const existing = await this.getPayment(id);
+    if (!existing) return undefined;
+    
+    const dbUpdates: Record<string, any> = {};
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.transactionId !== undefined) dbUpdates.transactionId = updates.transactionId;
+    if (updates.subscriptionId !== undefined) dbUpdates.subscriptionId = updates.subscriptionId;
+    if (updates.completedAt !== undefined) dbUpdates.completedAt = updates.completedAt;
+    if (updates.qrCode !== undefined) dbUpdates.qrCode = updates.qrCode;
+    
+    if (Object.keys(dbUpdates).length > 0) {
+      db.update(schema.payments).set(dbUpdates).where(eq(schema.payments.id, id)).run();
+    }
+    return this.getPayment(id);
+  }
+
+  private mapPayment(row: typeof schema.payments.$inferSelect): Payment {
+    return {
+      id: row.id,
+      platform: row.platform,
+      platformLogo: row.platformLogo ?? undefined,
+      amount: row.amount,
+      billingCycle: row.billingCycle,
+      paymentMethod: row.paymentMethod ?? undefined,
+      status: row.status,
+      transactionId: row.transactionId ?? undefined,
+      subscriptionId: row.subscriptionId ?? undefined,
+      createdAt: row.createdAt,
+      completedAt: row.completedAt ?? undefined,
+      qrCode: row.qrCode ?? undefined,
     };
   }
 }

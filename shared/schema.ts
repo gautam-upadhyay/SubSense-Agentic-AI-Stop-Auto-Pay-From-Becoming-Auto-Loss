@@ -110,3 +110,48 @@ export const dashboardSummarySchema = z.object({
 });
 
 export type DashboardSummary = z.infer<typeof dashboardSummarySchema>;
+
+// Payment Schema
+export const paymentSchema = z.object({
+  id: z.string(),
+  platform: z.string(),
+  platformLogo: z.string().optional(),
+  amount: z.number(),
+  billingCycle: z.enum(["monthly", "yearly"]),
+  paymentMethod: z.enum(["upi", "qr", "card"]).optional(),
+  status: z.enum(["pending", "processing", "success", "failed"]),
+  transactionId: z.string().optional(),
+  subscriptionId: z.string().optional(),
+  createdAt: z.string(),
+  completedAt: z.string().optional(),
+  qrCode: z.string().optional(),
+});
+
+export const initiatePaymentSchema = z.object({
+  platform: z.string(),
+  amount: z.number(),
+  billingCycle: z.enum(["monthly", "yearly"]),
+  paymentMethod: z.enum(["upi", "qr", "card"]),
+});
+
+export const confirmPaymentSchema = z.object({
+  paymentId: z.string(),
+});
+
+export type Payment = z.infer<typeof paymentSchema>;
+export type InitiatePayment = z.infer<typeof initiatePaymentSchema>;
+export type ConfirmPayment = z.infer<typeof confirmPaymentSchema>;
+
+// Platform for Marketplace
+export const platformSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  logo: z.string(),
+  category: z.string(),
+  monthlyPrice: z.number(),
+  yearlyPrice: z.number(),
+  description: z.string(),
+  popular: z.boolean().optional(),
+});
+
+export type Platform = z.infer<typeof platformSchema>;

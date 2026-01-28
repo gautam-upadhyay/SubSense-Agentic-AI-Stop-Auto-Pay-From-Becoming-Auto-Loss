@@ -12,12 +12,18 @@ import Subscriptions from "@/pages/subscriptions";
 import Transactions from "@/pages/transactions";
 import Alerts from "@/pages/alerts";
 import Agents from "@/pages/agents";
+import Marketplace from "@/pages/marketplace";
+import PaymentPage from "@/pages/payment";
+import QRPayPage from "@/pages/qr-pay";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/marketplace" component={Marketplace} />
+      <Route path="/pay/:platform" component={PaymentPage} />
+      <Route path="/qr-pay/:paymentId" component={QRPayPage} />
       <Route path="/subscriptions" component={Subscriptions} />
       <Route path="/transactions" component={Transactions} />
       <Route path="/alerts" component={Alerts} />

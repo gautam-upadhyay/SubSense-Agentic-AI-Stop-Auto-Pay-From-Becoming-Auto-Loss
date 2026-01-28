@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./sqliteStorage.js";
 import { z } from "zod";
 import { simulateAutoPay, runAgentPipeline } from "./ai/runner.js";
+import QRCode from "qrcode";
+import { initiatePaymentSchema, confirmPaymentSchema } from "@shared/schema";
 
 const resolveAlertSchema = z.object({
   action: z.enum(["cancel", "keep"]),
@@ -249,7 +251,216 @@ export async function registerRoutes(
     }
   });
 
+  // Payment Gateway Routes
+  app.post("/api/payments/initiate", async (req, res) => {
+    try {
+      const validation = initiatePaymentSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid request body", details: validation.error.errors });
+      }
+
+      const { platform, amount, billingCycle, paymentMethod } = validation.data;
+      
+      console.log("\n" + "=".repeat(60));
+      console.log("[PAYMENT] Initiating payment");
+      console.log(`[PAYMENT] Platform: ${platform}, Amount: ₹${amount}, Method: ${paymentMethod}`);
+      console.log("=".repeat(60));
+
+      const paymentId = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Generate QR code for QR payment method
+      let qrCode: string | undefined;
+      if (paymentMethod === "qr") {
+        const qrData = JSON.stringify({
+          paymentId,
+          amount,
+          platform,
+          demo: true,
+        });
+        const baseUrl = process.env.REPL_SLUG 
+          ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+          : "http://localhost:5000";
+        const paymentUrl = `${baseUrl}/qr-pay/${paymentId}`;
+        qrCode = await QRCode.toDataURL(paymentUrl, {
+          width: 200,
+          margin: 2,
+          color: {
+            dark: "#000000",
+            light: "#FFFFFF",
+          },
+        });
+      }
+
+      const payment = await storage.createPayment({
+        platform,
+        amount,
+        billingCycle,
+        paymentMethod,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+        qrCode,
+      });
+
+      console.log(`[PAYMENT] Created payment: ${payment.id}`);
+      res.json(payment);
+    } catch (error) {
+      console.error("[PAYMENT] Initiation error:", error);
+      res.status(500).json({ error: "Failed to initiate payment" });
+    }
+  });
+
+  app.post("/api/payments/confirm", async (req, res) => {
+    try {
+      const validation = confirmPaymentSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid request body", details: validation.error.errors });
+      }
+
+      const { paymentId } = validation.data;
+      const payment = await storage.getPayment(paymentId);
+
+      if (!payment) {
+        return res.status(404).json({ error: "Payment not found" });
+      }
+
+      console.log("\n[PAYMENT] Confirming payment:", paymentId);
+      console.log("[PAYMENT] Simulating gateway processing (1.5s delay)...");
+
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Create subscription
+      const nextBillingDate = new Date();
+      if (payment.billingCycle === "monthly") {
+        nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+      } else {
+        nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+      }
+
+      const categoryMap: Record<string, string> = {
+        "Netflix": "Entertainment",
+        "Amazon Prime": "Shopping",
+        "Spotify": "Entertainment",
+        "YouTube Premium": "Entertainment",
+        "Apple TV+": "Entertainment",
+        "AWS": "Cloud Services",
+        "Adobe Creative": "Productivity",
+        "Dropbox": "Storage",
+        "Notion": "Productivity",
+        "LinkedIn Premium": "Professional",
+        "Fitness First": "Fitness",
+        "Coursera Plus": "Education",
+        "Google One": "Storage",
+        "Xbox Game Pass": "Gaming",
+      };
+
+      const subscription = await storage.createSubscription({
+        merchant: payment.platform,
+        currentAmount: payment.amount,
+        billingCycle: payment.billingCycle,
+        status: "active",
+        lastUsedDate: new Date().toISOString(),
+        nextBillingDate: nextBillingDate.toISOString(),
+        category: categoryMap[payment.platform] || "Other",
+        autoPayEnabled: true,
+      });
+
+      // Create transaction
+      const transaction = await storage.createTransaction({
+        date: new Date().toISOString(),
+        merchant: payment.platform,
+        amount: payment.amount,
+        transactionType: "MANUAL",
+        status: "success",
+        subscriptionId: subscription.id,
+        category: subscription.category,
+      });
+
+      // Update payment status
+      await storage.updatePayment(paymentId, {
+        status: "success",
+        transactionId: transaction.id,
+        subscriptionId: subscription.id,
+        completedAt: new Date().toISOString(),
+      });
+
+      // Update wallet balance
+      const wallet = await storage.getWallet();
+      if (wallet) {
+        await storage.updateWallet({
+          balance: wallet.balance - payment.amount,
+          lastUpdated: new Date().toISOString(),
+        });
+      }
+
+      console.log(`[PAYMENT] SUCCESS! Subscription created: ${subscription.merchant}`);
+      console.log(`[PAYMENT] Auto-pay enabled for future payments`);
+
+      // Trigger AI agents
+      console.log("\n[AI] Triggering agent pipeline for new subscription...");
+      await runAgentPipeline();
+
+      res.json({
+        success: true,
+        payment: await storage.getPayment(paymentId),
+        subscription,
+        transaction,
+      });
+    } catch (error) {
+      console.error("[PAYMENT] Confirmation error:", error);
+      res.status(500).json({ error: "Failed to confirm payment" });
+    }
+  });
+
+  app.post("/api/payments/webhook", async (req, res) => {
+    try {
+      const { paymentId, status } = req.body;
+      
+      if (!paymentId) {
+        return res.status(400).json({ error: "Payment ID required" });
+      }
+
+      const payment = await storage.getPayment(paymentId);
+      if (!payment) {
+        return res.status(404).json({ error: "Payment not found" });
+      }
+
+      console.log("\n[WEBHOOK] Received payment webhook");
+      console.log(`[WEBHOOK] Payment: ${paymentId}, Status: ${status}`);
+
+      if (status === "success") {
+        // Process the payment confirmation
+        const confirmResponse = await fetch(`http://localhost:5000/api/payments/confirm`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId }),
+        });
+        const result = await confirmResponse.json();
+        res.json(result);
+      } else {
+        await storage.updatePayment(paymentId, { status: "failed" });
+        res.json({ success: false, status: "failed" });
+      }
+    } catch (error) {
+      console.error("[WEBHOOK] Error:", error);
+      res.status(500).json({ error: "Webhook processing failed" });
+    }
+  });
+
+  app.get("/api/payments/:id", async (req, res) => {
+    try {
+      const payment = await storage.getPayment(req.params.id);
+      if (!payment) {
+        return res.status(404).json({ error: "Payment not found" });
+      }
+      res.json(payment);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get payment" });
+    }
+  });
+
   console.log("\n[Server] API routes registered");
+  console.log("[Server] Payment gateway ready (Demo Mode)");
   console.log("[Server] Agentic AI pipeline ready");
   console.log("[Server] Human-in-the-loop safety enabled\n");
 
