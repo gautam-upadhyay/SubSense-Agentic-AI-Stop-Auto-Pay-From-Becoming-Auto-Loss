@@ -64,7 +64,7 @@ export class MemStorage implements IStorage {
   }
 
   private initializeMockData() {
-    // Initialize realistic subscriptions
+    // Initialize realistic subscriptions with varied use cases
     const subscriptionsData: InsertSubscription[] = [
       {
         merchant: "Netflix",
@@ -93,7 +93,7 @@ export class MemStorage implements IStorage {
         billingCycle: "yearly",
         status: "active",
         lastUsedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        nextBillingDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+        nextBillingDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
         category: "Shopping",
         autoPayEnabled: true,
       },
@@ -146,6 +146,26 @@ export class MemStorage implements IStorage {
         lastUsedDate: new Date().toISOString(),
         nextBillingDate: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
         category: "Productivity",
+        autoPayEnabled: true,
+      },
+      {
+        merchant: "Fitness First",
+        currentAmount: 2999,
+        billingCycle: "monthly",
+        status: "active",
+        lastUsedDate: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
+        nextBillingDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+        category: "Fitness",
+        autoPayEnabled: true,
+      },
+      {
+        merchant: "Google One",
+        currentAmount: 130,
+        billingCycle: "monthly",
+        status: "active",
+        lastUsedDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+        nextBillingDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+        category: "Storage",
         autoPayEnabled: true,
       },
     ];

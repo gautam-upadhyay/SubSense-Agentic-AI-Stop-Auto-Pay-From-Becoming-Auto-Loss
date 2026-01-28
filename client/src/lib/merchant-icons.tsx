@@ -1,9 +1,9 @@
 import {
   Cloud,
-  Briefcase,
   Tv,
   AppWindow,
   FileSpreadsheet,
+  Dumbbell,
 } from "lucide-react";
 import { SiNetflix, SiSpotify, SiAmazon, SiYoutube, SiAdobe, SiDropbox, SiNotion, SiLinkedin } from "react-icons/si";
 
@@ -51,6 +51,10 @@ export const merchantIconMap: Record<string, { icon: React.ReactNode; bgColor: s
   LinkedIn: {
     icon: <SiLinkedin className="w-5 h-5 text-blue-700" />,
     bgColor: "bg-blue-100 dark:bg-blue-900/30",
+  },
+  "Fitness First": {
+    icon: <Dumbbell className="w-5 h-5 text-orange-600" />,
+    bgColor: "bg-orange-100 dark:bg-orange-900/30",
   },
 };
 

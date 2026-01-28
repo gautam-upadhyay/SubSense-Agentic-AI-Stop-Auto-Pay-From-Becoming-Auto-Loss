@@ -4,23 +4,24 @@
 
 SubSense is a FinTech web application that simulates a Paytm/GPay-style payment dashboard with wallet transactions and auto-pay subscriptions. The core differentiator is an Agentic AI system that autonomously protects users from silent financial loss by detecting:
 
-- Silent subscription price increases
-- Unused or forgotten subscriptions
-- Recurring long-term financial leakage
+- Silent subscription price increases (>15% threshold)
+- Unused or forgotten subscriptions (30/60/90 day inactivity)
+- Upcoming annual renewals
+- Duplicate/overlapping subscriptions
+- Offline memberships (gym, classes)
 
 The AI operates using an agentic loop (Observe → Reason → Decide → Act) while ensuring user approval before any action.
 
 ## Recent Changes
 
-- **January 2026**: Complete MVP implementation with:
+- **January 2026**: Major AI upgrade with LangChain integration:
+  - Real AI agent framework with LangChain tools
+  - 6 specialized agents with orchestrated pipeline
+  - Terminal logging for agent activity (hackathon demo-ready)
+  - Human-in-the-loop safety with audit trail
+  - New use cases: annual renewals, duplicate services, gym memberships
+  - 10 subscriptions including Fitness First gym membership
   - Professional FinTech design with blue primary color, Inter font
-  - 5 pages: Dashboard, Subscriptions, Transactions, AI Alerts, AI Agents
-  - 6 AI agents with real-time status monitoring
-  - Simulate Auto-Pay button for demonstration
-  - Light/dark theme toggle
-  - Full Zod validation on all write endpoints
-  - Open Graph meta tags for SEO
-  - react-icons/si for brand logos (Netflix, Spotify, etc.)
 
 ## User Preferences
 
@@ -48,24 +49,39 @@ Preferred communication style: Simple, everyday language.
 - **ORM**: Drizzle ORM with PostgreSQL dialect
 - **Schema Location**: `shared/schema.ts` (Zod-based validation)
 - **Current Implementation**: In-memory storage (`MemStorage` class) with interface for database swap
-- **Session Store**: connect-pg-simple for PostgreSQL sessions
+- **Audit Trail**: Logging all user actions and AI recommendations
 
-### Agentic AI System
-The AI uses deterministic, rule-based logic with multiple specialized agents:
+### Agentic AI System (LangChain-Powered)
 
-1. **Monitoring Agent**: Observes transactions and builds subscription memory
-2. **Anomaly Detection Agent**: Detects price increases >15%, trial-to-paid transitions
-3. **Usage Analysis Agent**: Analyzes service usage and detects unused subscriptions (30+ days)
-4. **Risk Prediction Agent**: Estimates financial loss and assigns risk levels (high/medium/low)
-5. **Reasoning Agent**: Explains changes and financial impact with natural language
-6. **Action Recommendation Agent**: Suggests actions requiring user approval
+The AI uses LangChain for LLM interface and tool execution:
 
-### Key Design Patterns
-- **Shared Schema**: TypeScript types shared between client and server via `@shared/*` alias
-- **Path Aliases**: `@/*` for client source, `@shared/*` for shared code
-- **API Client**: Centralized fetch wrapper with React Query integration
-- **Component Architecture**: Presentational components with data fetching at page level
-- **Merchant Icons**: Centralized icon mapping in `client/src/lib/merchant-icons.tsx`
+**AI Stack:**
+- LangChain (@langchain/core, @langchain/openai)
+- OpenAI API (optional, falls back to templates)
+- Low-temperature prompts for deterministic finance reasoning
+
+**Agent Pipeline (Orchestration Flow):**
+```
+DB → Monitor → Detect → Predict → Explain → Recommend → User Approval
+```
+
+**Agents Implemented:**
+1. **Monitoring Agent**: Observes transactions, detects patterns (price changes, unused, renewals)
+2. **Anomaly Detection Agent**: Detects price increases >15%, unused 30+ days, duplicates
+3. **Risk Prediction Agent**: Calculates financial loss, assigns severity (high/medium/low)
+4. **Reasoning Agent**: Generates natural language explanations (LLM or template-based)
+5. **Action Recommendation Agent**: Suggests actions, enforces human-in-the-loop
+
+**LangChain Tools:**
+- `getSubscriptions`: Fetch all subscriptions from DB
+- `getTransactions`: Fetch transaction history
+- `calculateLoss`: Calculate monthly/yearly financial impact
+- `getSubscriptionById`: Fetch specific subscription
+
+**Human-in-the-Loop Safety:**
+- AI only recommends, never auto-executes
+- All actions require user approval via UI
+- Full audit trail logging in terminal
 
 ## Project Structure
 
@@ -94,6 +110,18 @@ The AI uses deterministic, rule-based logic with multiple specialized agents:
 │   │   └── App.tsx          # Root with routing and providers
 │   └── index.html           # Entry point with SEO meta tags
 ├── server/
+│   ├── ai/                  # Agentic AI Layer
+│   │   ├── agents/          # Agent implementations
+│   │   │   ├── monitoringAgent.ts
+│   │   │   ├── anomalyAgent.ts
+│   │   │   ├── riskAgent.ts
+│   │   │   ├── reasoningAgent.ts
+│   │   │   └── actionAgent.ts
+│   │   ├── tools/           # LangChain tools
+│   │   │   └── subscriptionTools.ts
+│   │   ├── graph/           # Orchestration
+│   │   │   └── orchestrator.ts
+│   │   └── runner.ts        # Pipeline entry point
 │   ├── routes.ts            # API endpoints with Zod validation
 │   ├── storage.ts           # In-memory storage with mock data
 │   └── index.ts             # Express server entry
@@ -114,29 +142,29 @@ The AI uses deterministic, rule-based logic with multiple specialized agents:
 | `/api/alerts/:id/resolve` | POST | Resolve alert (cancel/keep) |
 | `/api/alerts/:id/dismiss` | POST | Dismiss alert |
 | `/api/agents/status` | GET | AI agent statuses |
+| `/api/agents/run` | POST | Manually trigger AI pipeline |
 | `/api/simulate/autopay` | POST | Simulate auto-pay transaction |
 | `/api/analytics/monthly-trend` | GET | Monthly spending data |
 
 ## External Dependencies
+
+### AI/ML
+- **LangChain**: @langchain/core, @langchain/openai for LLM interface
+- **OpenAI API**: Optional for dynamic reasoning (falls back to templates)
 
 ### Database
 - **PostgreSQL**: Required for production (DATABASE_URL environment variable)
 - **Drizzle Kit**: Database migrations via `db:push` command
 
 ### UI Component Libraries
-- **Radix UI**: Headless accessible components (dialog, dropdown, tabs, etc.)
+- **Radix UI**: Headless accessible components
 - **shadcn/ui**: Pre-styled component collection
 - **Lucide React**: UI icon library
-- **react-icons/si**: Brand logo icons (Netflix, Spotify, etc.)
+- **react-icons/si**: Brand logo icons
 
 ### Build & Development
 - **Vite**: Frontend dev server and bundler
-- **Replit Plugins**: Runtime error overlay, cartographer, dev banner
-
-### Styling
-- **Tailwind CSS**: Utility-first CSS framework
-- **class-variance-authority**: Component variant management
-- **tailwind-merge**: Tailwind class deduplication
+- **esbuild**: Server bundling
 
 ## Running the Application
 
@@ -144,6 +172,12 @@ The application runs on port 5000 with the command `npm run dev`. The Express se
 
 ## Demo Features
 
-- **Simulate Auto-Pay**: Click the button on the dashboard to trigger a random auto-pay transaction with 30% chance of price increase. The AI agents will analyze and generate alerts.
+- **Simulate Auto-Pay**: Click the button on the dashboard to trigger a random auto-pay transaction with 30% chance of price increase. Watch terminal for AI agent logs.
+- **Terminal Logging**: All agent activity is logged to terminal for hackathon demo visibility.
 - **Alert Resolution**: On the AI Alerts page, expand alerts to see AI explanations and take actions (Cancel Auto-Pay, Keep, or Dismiss).
-- **Theme Toggle**: Switch between light and dark mode using the toggle in the header.
+- **Human-in-the-Loop**: All actions require explicit user approval - AI never auto-executes.
+- **Theme Toggle**: Switch between light and dark mode.
+
+## One-Line Tech Summary
+
+"SubSense uses React and Tailwind for UI, Express with in-memory storage for backend, and a real Agentic AI layer built with LangChain—ensuring explainable, user-controlled financial protection."

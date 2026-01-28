@@ -41,7 +41,7 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 // Alert Schema
 export const alertSchema = z.object({
   id: z.string(),
-  type: z.enum(["price_increase", "unused_subscription", "trial_to_paid", "plan_drift"]),
+  type: z.enum(["price_increase", "unused_subscription", "trial_to_paid", "plan_drift", "upcoming_renewal", "duplicate_service", "small_charges"]),
   severity: z.enum(["high", "medium", "low"]),
   subscriptionId: z.string(),
   merchant: z.string(),
@@ -58,6 +58,19 @@ export const alertSchema = z.object({
   oldAmount: z.number().optional(),
   newAmount: z.number().optional(),
 });
+
+// Audit Log Schema
+export const auditLogSchema = z.object({
+  id: z.string(),
+  timestamp: z.string(),
+  action: z.enum(["alert_created", "alert_resolved", "alert_dismissed", "subscription_cancelled", "subscription_paused", "subscription_resumed", "agent_run"]),
+  entityType: z.enum(["alert", "subscription", "agent"]),
+  entityId: z.string(),
+  details: z.string(),
+  userApproved: z.boolean(),
+});
+
+export type AuditLog = z.infer<typeof auditLogSchema>;
 
 export const insertAlertSchema = alertSchema.omit({ id: true });
 
