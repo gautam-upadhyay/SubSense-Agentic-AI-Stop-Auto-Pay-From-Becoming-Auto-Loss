@@ -2,7 +2,7 @@ import { db, schema } from "./db/index.js";
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import type { IStorage } from "./storage.js";
-import type {
+import {
   Subscription,
   InsertSubscription,
   Transaction,
@@ -19,12 +19,18 @@ import type {
 export class SQLiteStorage implements IStorage {
   async getSubscriptions(): Promise<Subscription[]> {
     const rows = db.select().from(schema.subscriptions).all();
-    return rows.map(this.mapSubscription);
+    return rows.map(row => ({
+      ...row,
+      autoPayEnabled: Boolean(row.autoPayEnabled),
+    }));
   }
 
   async getSubscription(id: string): Promise<Subscription | undefined> {
     const row = db.select().from(schema.subscriptions).where(eq(schema.subscriptions.id, id)).get();
-    return row ? this.mapSubscription(row) : undefined;
+    return row ? {
+      ...row,
+      autoPayEnabled: Boolean(row.autoPayEnabled),
+    } : undefined;
   }
 
   async createSubscription(sub: InsertSubscription): Promise<Subscription> {
@@ -40,11 +46,14 @@ export class SQLiteStorage implements IStorage {
       lastUsedDate: sub.lastUsedDate ?? null,
       nextBillingDate: sub.nextBillingDate,
       category: sub.category,
-      autoPayEnabled: sub.autoPayEnabled,
+      autoPayEnabled: sub.autoPayEnabled ? 1 : 0,
     };
     db.insert(schema.subscriptions).values(dbRow).run();
     const inserted = db.select().from(schema.subscriptions).where(eq(schema.subscriptions.id, id)).get();
-    return this.mapSubscription(inserted!);
+    return {
+      ...inserted!,
+      autoPayEnabled: Boolean(inserted!.autoPayEnabled),
+    };
   }
 
   async updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription | undefined> {
@@ -53,7 +62,7 @@ export class SQLiteStorage implements IStorage {
     
     const dbUpdates: Record<string, any> = {};
     if (updates.status !== undefined) dbUpdates.status = updates.status;
-    if (updates.autoPayEnabled !== undefined) dbUpdates.autoPayEnabled = updates.autoPayEnabled;
+    if (updates.autoPayEnabled !== undefined) dbUpdates.autoPayEnabled = updates.autoPayEnabled ? 1 : 0;
     if (updates.currentAmount !== undefined) dbUpdates.currentAmount = updates.currentAmount;
     if (updates.previousAmount !== undefined) dbUpdates.previousAmount = updates.previousAmount;
     if (updates.lastUsedDate !== undefined) dbUpdates.lastUsedDate = updates.lastUsedDate;
@@ -65,8 +74,7 @@ export class SQLiteStorage implements IStorage {
   }
 
   async getTransactions(): Promise<Transaction[]> {
-    const rows = db.select().from(schema.transactions).all();
-    return rows.map(this.mapTransaction);
+    return db.select().from(schema.transactions).all();
   }
 
   async createTransaction(txn: InsertTransaction): Promise<Transaction> {
@@ -84,17 +92,29 @@ export class SQLiteStorage implements IStorage {
     };
     db.insert(schema.transactions).values(dbRow).run();
     const inserted = db.select().from(schema.transactions).where(eq(schema.transactions.id, id)).get();
-    return this.mapTransaction(inserted!);
+    return inserted!;
   }
 
   async getAlerts(): Promise<Alert[]> {
-    const rows = db.select().from(schema.alerts).all();
-    return rows.map(this.mapAlert);
+    const rows = await db.select().from(schema.alerts).all();
+    return rows.map(row => ({
+      ...row,
+      financialImpact: {
+        monthly: row.financialImpactMonthly,
+        yearly: row.financialImpactYearly,
+      },
+    }));
   }
 
   async getAlert(id: string): Promise<Alert | undefined> {
-    const row = db.select().from(schema.alerts).where(eq(schema.alerts.id, id)).get();
-    return row ? this.mapAlert(row) : undefined;
+    const row = await db.select().from(schema.alerts).where(eq(schema.alerts.id, id)).get();
+    return row ? {
+      ...row,
+      financialImpact: {
+        monthly: row.financialImpactMonthly,
+        yearly: row.financialImpactYearly,
+      },
+    } : undefined;
   }
 
   async createAlert(alert: InsertAlert): Promise<Alert> {
@@ -127,8 +147,14 @@ export class SQLiteStorage implements IStorage {
       userApproved: false,
     });
     
-    const inserted = db.select().from(schema.alerts).where(eq(schema.alerts.id, id)).get();
-    return this.mapAlert(inserted!);
+    const inserted = await db.select().from(schema.alerts).where(eq(schema.alerts.id, id)).get();
+    return {
+      ...inserted!,
+      financialImpact: {
+        monthly: inserted!.financialImpactMonthly,
+        yearly: inserted!.financialImpactYearly,
+      },
+    };
   }
 
   async updateAlert(id: string, updates: Partial<Alert>): Promise<Alert | undefined> {
@@ -222,63 +248,14 @@ export class SQLiteStorage implements IStorage {
       entityType: log.entityType,
       entityId: log.entityId,
       details: log.details,
-      userApproved: log.userApproved,
+      userApproved: log.userApproved ? 1 : 0,
     };
     db.insert(schema.auditLogs).values(dbRow).run();
     console.log(`[AUDIT] ${log.action}: ${log.details}`);
     const inserted = db.select().from(schema.auditLogs).where(eq(schema.auditLogs.id, id)).get();
-    return inserted!;
-  }
-
-  private mapSubscription(row: typeof schema.subscriptions.$inferSelect): Subscription {
     return {
-      id: row.id,
-      merchant: row.merchant,
-      merchantLogo: row.merchantLogo ?? undefined,
-      currentAmount: row.currentAmount,
-      previousAmount: row.previousAmount ?? undefined,
-      billingCycle: row.billingCycle,
-      status: row.status,
-      lastUsedDate: row.lastUsedDate ?? undefined,
-      nextBillingDate: row.nextBillingDate,
-      category: row.category,
-      autoPayEnabled: row.autoPayEnabled,
-    };
-  }
-
-  private mapTransaction(row: typeof schema.transactions.$inferSelect): Transaction {
-    return {
-      id: row.id,
-      date: row.date,
-      merchant: row.merchant,
-      merchantLogo: row.merchantLogo ?? undefined,
-      amount: row.amount,
-      transactionType: row.transactionType,
-      status: row.status,
-      subscriptionId: row.subscriptionId ?? undefined,
-      category: row.category,
-    };
-  }
-
-  private mapAlert(row: typeof schema.alerts.$inferSelect): Alert {
-    return {
-      id: row.id,
-      type: row.type,
-      severity: row.severity,
-      subscriptionId: row.subscriptionId,
-      merchant: row.merchant,
-      title: row.title,
-      description: row.description,
-      financialImpact: {
-        monthly: row.financialImpactMonthly,
-        yearly: row.financialImpactYearly,
-      },
-      recommendation: row.recommendation,
-      aiExplanation: row.aiExplanation,
-      status: row.status,
-      createdAt: row.createdAt,
-      oldAmount: row.oldAmount ?? undefined,
-      newAmount: row.newAmount ?? undefined,
+      ...inserted!,
+      userApproved: Boolean(inserted!.userApproved),
     };
   }
 
@@ -300,12 +277,11 @@ export class SQLiteStorage implements IStorage {
     };
     db.insert(schema.payments).values(dbRow).run();
     const inserted = db.select().from(schema.payments).where(eq(schema.payments.id, id)).get();
-    return this.mapPayment(inserted!);
+    return inserted!;
   }
 
   async getPayment(id: string): Promise<Payment | undefined> {
-    const row = db.select().from(schema.payments).where(eq(schema.payments.id, id)).get();
-    return row ? this.mapPayment(row) : undefined;
+    return db.select().from(schema.payments).where(eq(schema.payments.id, id)).get();
   }
 
   async updatePayment(id: string, updates: Partial<Payment>): Promise<Payment | undefined> {
@@ -323,23 +299,6 @@ export class SQLiteStorage implements IStorage {
       db.update(schema.payments).set(dbUpdates).where(eq(schema.payments.id, id)).run();
     }
     return this.getPayment(id);
-  }
-
-  private mapPayment(row: typeof schema.payments.$inferSelect): Payment {
-    return {
-      id: row.id,
-      platform: row.platform,
-      platformLogo: row.platformLogo ?? undefined,
-      amount: row.amount,
-      billingCycle: row.billingCycle,
-      paymentMethod: row.paymentMethod ?? undefined,
-      status: row.status,
-      transactionId: row.transactionId ?? undefined,
-      subscriptionId: row.subscriptionId ?? undefined,
-      createdAt: row.createdAt,
-      completedAt: row.completedAt ?? undefined,
-      qrCode: row.qrCode ?? undefined,
-    };
   }
 }
 
